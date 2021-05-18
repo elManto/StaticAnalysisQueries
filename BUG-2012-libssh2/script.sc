@@ -3,15 +3,9 @@ import io.shiftleft.codepropertygraph.generated.Operators
 import io.shiftleft.codepropertygraph.generated.nodes.Call
 import io.shiftleft.semanticcpg.language._
 
-@main def main(): List[Call] = {
-  (cpg: Cpg)
-    .call("LIBSSH2_ALLOC")	// Adapt to the memory allocation API
-    .filter { mallocCall =>
-      mallocCall.argument(2) match {
-        case subCall: Call =>
-          subCall.name == Operators.addition || subCall.name == Operators.multiplication
-        case _ => false
-      }
-    }
-    .l
+@main def main(payload: String) = {
+	importCpg(payload)
+	
+	cpg.call(".*alloc*.|.*ALLOC*.").argument.isCallTo("<operator>.addition").p
+	//cpg.call(".*alloc*.|.*ALLOC*.").argument.isCallTo("<operator>.addition").count.p
 }

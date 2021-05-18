@@ -1,12 +1,24 @@
+@main def execute(payload: String) = {
+	importCpg(payload)
 
-//val identifiers = cpg.call.name("g_free").argument.ast.isIdentifier.p
-//val use = cpg.call.name("<operator>.indirectFieldAccess").argument
-//val free = cpg.call.name("g_free").argument
-//
-//cpg.call.name("<operator>.indirectFieldAccess").argument.foreach{x=>println(x.lineNumber, " ", x.code, " ", x.reachableBy(cpg.parameter).lineNumber.p)}
+        cpg.method
+          .name(".*free*.")
+          .filter(_.parameter.size == 1)
+          .callIn
+          .where(_.argument(1).isIdentifier)
+          .flatMap(f => {
+            val freedIdentifierCode = f.argument(1).code
+            val postDom = f.postDominatedBy.toSet
 
+            val assignedPostDom = postDom.isIdentifier
+              .where(_.inAssignment)
+              .codeExact(freedIdentifierCode)
+              .flatMap(id => id ++ id.postDominatedBy)
 
-val free = cpg.call.name("g_free").argument.reachableBy(cpg.parameter).p
+            postDom
+              .removedAll(assignedPostDom)
+              .isIdentifier
+              .codeExact(freedIdentifierCode)
+          }).p
 
-val use = cpg.call.name("<operator>.indirectFieldAccess").argument.reachableBy(cpg.parameter).p
-use.intersect(free).foreach(x=>println(x.code))
+}
